@@ -1,0 +1,43 @@
+sudo: required
+language: generic
+
+services:
+  - docker
+before_install:
+  - docker build -t imkarthy/docker-react -f ./client/Dockerfile.dev ./client
+script:
+  - docker run -e CI=true imkarthy/docker-react
+after_sucess:
+  - docker build -t imkarthy/multi-client ./client
+  - docker build -t imkarthy/multi-nginx ./nginx
+  - docker build -t imkarthy/multi-server ./server
+  - docker build -t imkarthy/multi-workder ./worker
+# Log into the docker CLI 
+- echo "$DOCKER_PASSWORD" | docker login -u "DOCKER_ID" --password-stdin
+#Take those images and push them to docker hub
+- docker push imkarthy/multi-client
+- docker push imkarthy/multi-nginx
+- docker push imkarthy/multi-server
+- docker push imkarthy/multi-worker
+
+deploy:
+  provider: elasticbeanstalk
+  region: 'us-west-1'
+  app: 'multi-docker'
+  env: 'MultiDocker-env'
+  bucket_name: 'elasticbeanstalk-us-east-1'
+  bucket_path: 'docker-multi'
+  on:
+    branch: master
+  access_key_id: $AWS_ACCESS_KEY
+  secret_access_key: $AWS_SECRET_KEY
+
+
+
+
+
+
+
+
+
+
